@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #121316;
+  --color-surface: #1A1C20;
+  --color-control: #22252B;
+  --color-border-crisp: #262930;
+  --color-foreground: #F3F4F6;
+  --color-muted: #9CA3AF;
+  --color-local: #34D399;
+  --color-cloud-sky: #60A5FA;
+  --color-cloud-amber: #FBBF24;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #121316;
+  color: #F3F4F6;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Tactile matte dark claymorphic surfaces (dual-shadow depth, crisp 1px border, no neon glow) */
+.clay-surface {
+  background-color: #1A1C20;
+  border: 1px solid #262930;
+  box-shadow:
+    0 10px 24px -8px rgba(0, 0, 0, 0.6),
+    0 3px 8px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 -2px 5px 0 rgba(0, 0, 0, 0.32);
+}
+
+.clay-control {
+  background-color: #22252B;
+  border: 1px solid #262930;
+  box-shadow:
+    0 4px 10px -4px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.045),
+    inset 0 -1px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.clay-well {
+  background-color: #15171B;
+  border: 1px solid #262930;
+  box-shadow:
+    inset 0 2px 6px 0 rgba(0, 0, 0, 0.52),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.025);
+}
+
+.clay-pill-active {
+  background-color: #22252B;
+  border: 1px solid #32363F;
+  box-shadow:
+    0 3px 8px -2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Subtle dark scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121316;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262930;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333842;
 }

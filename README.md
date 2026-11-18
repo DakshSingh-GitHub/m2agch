@@ -65,10 +65,24 @@ Ensure **Node.js 20.9+** is installed.
    ```bash
    ollama pull bonsai2:9b
    ```
-3. **CORS Note (if running from a non-localhost origin or custom port):** Ollama allows `localhost` requests by default in most setups, but if browser requests to `http://localhost:11434` are blocked by CORS, start Ollama with `OLLAMA_ORIGINS`:
-   ```bash
-   OLLAMA_ORIGINS="*" ollama serve
-   ```
+3. **CORS & Remote / Vercel Deployments:**
+   - **Local Development (`localhost:3000`):** Works directly with `http://localhost:11434`.
+   - **Vercel / HTTPS Deployments:** When deployed to Vercel, the app is served over `https://`. Web browsers strictly block HTTPS web pages from making active requests to unencrypted `http://localhost:11434` due to **Mixed Content** and **Private Network Access (PNA)** security policies. Furthermore, Vercel's cloud servers cannot see `localhost` on your computer.
+   - **Fix for Vercel Deployments:**
+     1. Start Ollama with CORS enabled:
+        ```bash
+        OLLAMA_ORIGINS="*" ollama serve
+        ```
+     2. Expose your local port `11434` over HTTPS using a free tunnel (Cloudflare Tunnel or ngrok):
+        ```bash
+        # Option A: Cloudflare Tunnel (no account required)
+        cloudflared tunnel --url http://localhost:11434
+
+        # Option B: ngrok
+        ngrok http 11434
+        ```
+     3. In your deployed Vercel app, click the **Settings (gear)** icon next to Ollama in the top bar, paste your tunnel's `https://...` URL, and click **Save & Test** (or set `NEXT_PUBLIC_OLLAMA_BASE_URL` in Vercel project environment variables).
+     4. Alternatively, if hosting Ollama on a cloud VM or remote server, configure `OLLAMA_BASE_URL` in Vercel and switch the preset to `/api/ollama`.
 
 ### 3. Cloud Node (Google Gemini BYOK)
 1. Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/).

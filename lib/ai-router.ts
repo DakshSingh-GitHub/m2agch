@@ -1,6 +1,24 @@
 import type { ContextMessage, OllamaModel, RouteTarget, TriageResult } from "./types";
 
-export const OLLAMA_BASE_URL = "http://localhost:11434";
+export const DEFAULT_OLLAMA_BASE_URL =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_OLLAMA_BASE_URL?.trim()) ||
+  "http://localhost:11434";
+
+export const OLLAMA_BASE_URL = DEFAULT_OLLAMA_BASE_URL;
+
+export function sanitizeOllamaUrl(url?: string): string {
+  const target = (url || "").trim();
+  if (!target) return DEFAULT_OLLAMA_BASE_URL;
+  return target.replace(/\/+$/, "");
+}
+
+export function isMixedContentBlocked(url?: string): boolean {
+  if (typeof window === "undefined") return false;
+  const isHttps = window.location.protocol === "https:";
+  const target = sanitizeOllamaUrl(url);
+  const isHttpTarget = /^http:\/\//i.test(target);
+  return isHttps && isHttpTarget;
+}
 export const PREFERRED_LOCAL_MODEL = "bonsai2:9b";
 export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
@@ -26,22 +44,33 @@ export interface OllamaTagsResponse {
 }
 
 export async function fetchOllamaModels(
-  signal?: AbortSignal
-): Promise<{ online: boolean; models: OllamaModel[] }> {
+  signal?: AbortSignal,
+  baseUrl?: string
+): Promise<{ online: boolean; models: OllamaModel[]; error?: string; isMixedContent?: boolean }> {
+  const targetUrl = sanitizeOllamaUrl(baseUrl);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000);
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
 
   const onExternalAbort = () => controller.abort();
   signal?.addEventListener("abort", onExternalAbort, { once: true });
 
   try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+    const response = await fetch(`${targetUrl}/api/tags`, {
       method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        "bypass-tunnel-reminder": "true",
+      },
       signal: controller.signal,
     });
 
     if (!response.ok) {
-      return { online: false, models: [] };
+      return {
+        online: false,
+        models: [],
+        error: `HTTP ${response.status} from ${targetUrl}`,
+      };
     }
 
     const data = (await response.json()) as OllamaTagsResponse;
@@ -50,8 +79,19 @@ export async function fetchOllamaModels(
       : [];
 
     return { online: true, models };
-  } catch {
-    return { online: false, models: [] };
+  } catch (err) {
+    const isMixed = isMixedContentBlocked(targetUrl);
+    let errorDetail = "Unable to connect to Ollama node";
+    if (isMixed) {
+      errorDetail =
+        "Mixed Content Block: HTTPS deployment cannot fetch insecure http:// endpoint. Use an https:// tunnel URL or the /api/ollama server proxy.";
+    } else if (err instanceof Error && err.name === "AbortError") {
+      errorDetail = `Connection to ${targetUrl} timed out after 3.5s`;
+    } else if (err instanceof Error && err.message) {
+      errorDetail = err.message;
+    }
+
+    return { online: false, models: [], error: errorDetail, isMixedContent: isMixed };
   } finally {
     clearTimeout(timeoutId);
     signal?.removeEventListener("abort", onExternalAbort);
@@ -133,8 +173,10 @@ function parseTriageJson(rawContent: string): TriageResult | null {
 export async function runLocalTriage(
   prompt: string,
   localModel: string,
-  userSignal?: AbortSignal
+  userSignal?: AbortSignal,
+  baseUrl?: string
 ): Promise<TriageResult> {
+  const targetUrl = sanitizeOllamaUrl(baseUrl);
   if (!localModel) {
     return FAILOVER_RESULT;
   }
@@ -160,9 +202,13 @@ export async function runLocalTriage(
 
   try {
     const sendTriageRequest = (includeThinkFalse: boolean) =>
-      fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      fetch(`${targetUrl}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+          "bypass-tunnel-reminder": "true",
+        },
         signal: controller.signal,
         body: JSON.stringify({
           model: localModel,
@@ -255,6 +301,7 @@ export async function streamOllamaChat(
     context: ContextMessage[];
     prompt: string;
     signal: AbortSignal;
+    baseUrl?: string;
   },
   callbacks: StreamCallbacks
 ): Promise<{
@@ -263,7 +310,8 @@ export async function streamOllamaChat(
   tokensPerSec: number | null;
   tokenCount: number;
 }> {
-  const { model, context, prompt, signal } = params;
+  const { model, context, prompt, signal, baseUrl } = params;
+  const targetUrl = sanitizeOllamaUrl(baseUrl);
   const requestStartTime = performance.now();
 
   const messages = [
@@ -271,19 +319,33 @@ export async function streamOllamaChat(
     { role: "user" as const, content: prompt },
   ];
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal,
-    body: JSON.stringify({
-      model,
-      messages,
-      stream: true,
-      options: {
-        num_ctx: 32768,
+  let response: Response;
+  try {
+    response = await fetch(`${targetUrl}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        "bypass-tunnel-reminder": "true",
       },
-    }),
-  });
+      signal,
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        options: {
+          num_ctx: 32768,
+        },
+      }),
+    });
+  } catch (err) {
+    if (isMixedContentBlocked(targetUrl)) {
+      throw new Error(
+        `Mixed Content Block: Browser blocked insecure HTTP request to "${targetUrl}" from an HTTPS origin. On Vercel, please use a secure tunnel (e.g. ngrok or Cloudflare Tunnel) with an https:// URL, or switch to the /api/ollama server proxy.`
+      );
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     let errDetail = `Ollama returned HTTP ${response.status}`;

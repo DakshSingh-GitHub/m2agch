@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import {
   DEFAULT_GEMINI_MODEL,
+  DEFAULT_OLLAMA_BASE_URL,
   fetchOllamaModels,
   pickDefaultLocalModel,
   runLocalTriage,
@@ -35,6 +36,9 @@ const SESSION_KEY_API = "smart_split_gemini_api_key";
 const SESSION_KEY_MODEL = "smart_split_gemini_model";
 const SESSION_STORAGE_EVENT = "smart-split-session-storage";
 
+const LOCAL_KEY_OLLAMA_URL = "smart_split_ollama_base_url";
+const LOCAL_STORAGE_EVENT = "smart-split-local-storage";
+
 function subscribeSessionStorage(callback: () => void): () => void {
   window.addEventListener("storage", callback);
   window.addEventListener(SESSION_STORAGE_EVENT, callback);
@@ -42,6 +46,44 @@ function subscribeSessionStorage(callback: () => void): () => void {
     window.removeEventListener("storage", callback);
     window.removeEventListener(SESSION_STORAGE_EVENT, callback);
   };
+}
+
+function subscribeLocalStorage(callback: () => void): () => void {
+  window.addEventListener("storage", callback);
+  window.addEventListener(LOCAL_STORAGE_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(LOCAL_STORAGE_EVENT, callback);
+  };
+}
+
+function useLocalStorageValue(key: string, fallbackValue: string): [string, (val: string) => void] {
+  const value = useSyncExternalStore(
+    subscribeLocalStorage,
+    () => {
+      try {
+        const stored = localStorage.getItem(key);
+        return stored !== null && stored.trim() ? stored : fallbackValue;
+      } catch {
+        return fallbackValue;
+      }
+    },
+    () => fallbackValue
+  );
+
+  const setValue = useCallback(
+    (next: string) => {
+      try {
+        localStorage.setItem(key, next);
+        window.dispatchEvent(new Event(LOCAL_STORAGE_EVENT));
+      } catch {
+        // ignore storage errors
+      }
+    },
+    [key]
+  );
+
+  return [value, setValue];
 }
 
 function useSessionStorageValue(key: string, fallbackValue: string): [string, (val: string) => void] {
@@ -87,10 +129,15 @@ export function SmartSplitApp() {
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>({ phase: "idle" });
 
   // Ollama state
+  const [ollamaBaseUrl, setStoredOllamaBaseUrl] = useLocalStorageValue(
+    LOCAL_KEY_OLLAMA_URL,
+    DEFAULT_OLLAMA_BASE_URL
+  );
   const [ollamaOnline, setOllamaOnline] = useState(false);
   const [ollamaChecking, setOllamaChecking] = useState(true);
   const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
   const [selectedLocalModel, setSelectedLocalModel] = useState("");
+  const [ollamaError, setOllamaError] = useState<string | undefined>();
 
   // Cloud (Gemini BYOK) state persisted in sessionStorage
   const [geminiApiKey, setStoredGeminiApiKey] = useSessionStorageValue(SESSION_KEY_API, "");
@@ -102,6 +149,7 @@ export function SmartSplitApp() {
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const selectedLocalModelRef = useRef(selectedLocalModel);
+  const ollamaBaseUrlRef = useRef(ollamaBaseUrl);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
   const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -109,24 +157,31 @@ export function SmartSplitApp() {
     selectedLocalModelRef.current = selectedLocalModel;
   }, [selectedLocalModel]);
 
-  const refreshOllamaStatus = useCallback(async () => {
+  useEffect(() => {
+    ollamaBaseUrlRef.current = ollamaBaseUrl;
+  }, [ollamaBaseUrl]);
+
+  const refreshOllamaStatus = useCallback(async (customUrl?: string) => {
     setOllamaChecking(true);
-    const result = await fetchOllamaModels();
+    const targetUrl = customUrl ?? ollamaBaseUrlRef.current;
+    const result = await fetchOllamaModels(undefined, targetUrl);
     setOllamaOnline(result.online);
     setOllamaModels(result.models);
+    setOllamaError(result.error);
     setSelectedLocalModel((prev) => pickDefaultLocalModel(result.models, prev));
     setOllamaChecking(false);
   }, []);
 
-  // Ping local Ollama node on mount
+  // Ping local Ollama node on mount or when URL changes
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
 
-    fetchOllamaModels(controller.signal).then((result) => {
+    fetchOllamaModels(controller.signal, ollamaBaseUrl).then((result) => {
       if (!active) return;
       setOllamaOnline(result.online);
       setOllamaModels(result.models);
+      setOllamaError(result.error);
       setSelectedLocalModel((prev) => pickDefaultLocalModel(result.models, prev));
       setOllamaChecking(false);
     });
@@ -135,7 +190,7 @@ export function SmartSplitApp() {
       active = false;
       controller.abort();
     };
-  }, []);
+  }, [ollamaBaseUrl]);
 
   const handleChangeGeminiApiKey = useCallback(
     (value: string) => {
@@ -219,7 +274,8 @@ export function SmartSplitApp() {
           const triage = await runLocalTriage(
             prompt,
             selectedLocalModelRef.current,
-            controller.signal
+            controller.signal,
+            ollamaBaseUrlRef.current
           );
           targetRoute = triage.route;
           complexity = triage.complexity;
@@ -254,6 +310,10 @@ export function SmartSplitApp() {
 
         // Validate Local availability in Force Local mode
         if (targetRoute === "LOCAL" && (!ollamaOnline || !activeModel)) {
+          const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+          const isHttpTarget = /^http:\/\//i.test(ollamaBaseUrlRef.current);
+          const isMixed = isHttps && isHttpTarget;
+
           setMessages((prev) => [
             ...prev,
             {
@@ -261,8 +321,11 @@ export function SmartSplitApp() {
               role: "assistant",
               content: "",
               createdAt: Date.now(),
-              warning:
-                "Local Ollama node is offline or no model is selected. Start Ollama and click Refresh, or switch to Auto / Force Cloud.",
+              warning: isMixed
+                ? "Mixed Content Error: Browsers block http://localhost:11434 on HTTPS (Vercel). Open Ollama settings in the top bar to set an https:// tunnel or /api/ollama proxy."
+                : ollamaError
+                  ? `Ollama connection error: ${ollamaError}. Check your URL or start Ollama and refresh.`
+                  : "Local Ollama node is offline or no model is selected. Start Ollama and click Refresh, or switch to Auto / Force Cloud.",
               telemetry: baseTelemetry,
             },
           ]);
@@ -348,6 +411,7 @@ export function SmartSplitApp() {
                   context: contextSnapshot,
                   prompt,
                   signal: controller.signal,
+                  baseUrl: ollamaBaseUrlRef.current,
                 },
                 { onThinking, onDelta }
               )
@@ -438,6 +502,7 @@ export function SmartSplitApp() {
     [
       geminiApiKey,
       geminiModel,
+      ollamaError,
       ollamaOnline,
       pipelineStage.phase,
       rollingContext,
@@ -458,7 +523,10 @@ export function SmartSplitApp() {
         ollamaModels={ollamaModels}
         selectedLocalModel={selectedLocalModel}
         onSelectLocalModel={setSelectedLocalModel}
-        onRefreshOllama={() => void refreshOllamaStatus()}
+        onRefreshOllama={refreshOllamaStatus}
+        ollamaBaseUrl={ollamaBaseUrl}
+        onChangeOllamaBaseUrl={setStoredOllamaBaseUrl}
+        ollamaError={ollamaError}
         geminiApiKey={geminiApiKey}
         onChangeGeminiApiKey={handleChangeGeminiApiKey}
         geminiModel={geminiModel}

@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   title: "Smart Split — Hybrid Local + Cloud AI Router",
   description:
     "Client-side hybrid AI router triaging prompts between local Ollama models and Google Gemini.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/logo.png", type: "image/png" },
+    ],
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

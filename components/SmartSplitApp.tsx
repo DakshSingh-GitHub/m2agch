@@ -537,7 +537,7 @@ export function SmartSplitApp() {
         apiKeyInputRef={apiKeyInputRef}
       />
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-3 py-3 sm:px-4 sm:py-6">
         {messages.length === 0 ? (
           <EmptyState
             onSelectPrompt={(prompt) => void executePrompt(prompt)}

@@ -43,32 +43,32 @@ export function InputDock({
   };
 
   return (
-    <div className="sticky bottom-0 z-10 border-t border-[#262930] bg-[#121316]/95 px-4 py-3 backdrop-blur-sm">
+    <div className="sticky bottom-0 z-10 border-t border-[#262930] bg-[#121316]/95 px-3 py-2 sm:px-4 sm:py-3 backdrop-blur-sm pb-[max(0.5rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto w-full max-w-4xl">
-        <div className="clay-surface rounded-2xl p-2.5">
-          <div className="flex items-end gap-2">
+        <div className="clay-surface rounded-2xl p-2 sm:p-2.5">
+          <div className="flex items-end gap-1.5 sm:gap-2">
             <textarea
               ref={textareaRef}
               rows={1}
               value={input}
               onChange={(e) => onChangeInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything — Smart Split triages simple prompts locally and escalates complex tasks to Gemini..."
+              placeholder="Ask anything (Smart Split auto-routes)..."
               aria-label="Prompt input"
-              className="max-h-[180px] min-h-[42px] flex-1 resize-none bg-transparent px-2.5 py-2 text-[14.5px] leading-relaxed text-[#F3F4F6] placeholder-[#6B7280] outline-none"
+              className="max-h-[160px] min-h-[38px] sm:min-h-[42px] flex-1 resize-none bg-transparent px-2 sm:px-2.5 py-1.5 sm:py-2 text-[14px] sm:text-[14.5px] leading-relaxed text-[#F3F4F6] placeholder-[#6B7280] outline-none"
             />
 
-            <div className="flex items-center gap-1.5 pb-0.5">
+            <div className="flex items-center gap-1 sm:gap-1.5 pb-0.5 shrink-0">
               <button
                 type="button"
                 onClick={onClear}
                 disabled={!hasMessages || isBusy}
                 title="Clear chat"
                 aria-label="Clear chat"
-                className="clay-control inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[#9CA3AF] transition-colors hover:border-[#343944] hover:text-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                className="clay-control inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl px-2.5 sm:px-3 text-xs font-medium text-[#9CA3AF] transition-colors hover:border-[#343944] hover:text-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Clear Chat</span>
+                <span className="hidden sm:inline">Clear</span>
               </button>
 
               {isBusy ? (
@@ -76,7 +76,7 @@ export function InputDock({
                   type="button"
                   onClick={onStop}
                   aria-label="Stop generation"
-                  className="clay-control inline-flex h-9 items-center gap-1.5 rounded-xl border-[#FBBF24]/40 bg-[#22252B] px-3.5 text-xs font-medium text-[#FBBF24] transition-colors hover:bg-[#292D35] cursor-pointer"
+                  className="clay-control inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl border-[#FBBF24]/40 bg-[#22252B] px-3 sm:px-3.5 text-xs font-medium text-[#FBBF24] transition-colors hover:bg-[#292D35] cursor-pointer"
                 >
                   <Square className="h-3.5 w-3.5 fill-current" />
                   <span>Stop</span>
@@ -87,9 +87,9 @@ export function InputDock({
                   onClick={onSubmit}
                   disabled={input.trim().length === 0}
                   aria-label="Send prompt"
-                  className="clay-control inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#22252B] px-3.5 text-xs font-semibold text-[#F3F4F6] transition-colors hover:border-[#3A3F4B] hover:bg-[#2A2E36] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                  className="clay-control inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-xl bg-[#22252B] px-3 sm:px-3.5 text-xs font-semibold text-[#F3F4F6] transition-colors hover:border-[#3A3F4B] hover:bg-[#2A2E36] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                 >
-                  <span>Send</span>
+                  <span className="hidden sm:inline">Send</span>
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
               )}
@@ -97,10 +97,11 @@ export function InputDock({
           </div>
         </div>
 
-        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 px-1 font-mono text-[11px] text-[#6B7280]">
-          <span>Enter to send • Shift+Enter for newline</span>
+        <div className="mt-1 flex items-center justify-between px-1 font-mono text-[10px] sm:text-[11px] text-[#6B7280]">
+          <span className="hidden sm:inline">Enter to send • Shift+Enter for newline</span>
+          <span className="sm:hidden text-[10px]">Auto-triage routing</span>
           <span>
-            Rolling context: {contextWindowCount}/4 prior messages
+            Context: {contextWindowCount}/4
           </span>
         </div>
       </div>

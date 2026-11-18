@@ -14,12 +14,12 @@ export function MessageBubble({ message, onFocusApiKey }: MessageBubbleProps) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="clay-control max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-br-md px-4 py-3">
-          <div className="mb-1 flex items-center justify-end gap-1.5 font-mono text-[10.5px] uppercase tracking-wider text-[#9CA3AF]">
+        <div className="clay-control max-w-[88%] sm:max-w-[75%] rounded-2xl rounded-br-md px-3.5 py-2.5 sm:px-4 sm:py-3">
+          <div className="mb-1 flex items-center justify-end gap-1.5 font-mono text-[10px] sm:text-[10.5px] uppercase tracking-wider text-[#9CA3AF]">
             <span>You</span>
             <User className="h-3 w-3" />
           </div>
-          <p className="whitespace-pre-wrap text-[14.5px] leading-relaxed text-[#F3F4F6]">
+          <p className="whitespace-pre-wrap text-[14px] sm:text-[14.5px] leading-relaxed text-[#F3F4F6]">
             {message.content}
           </p>
         </div>
@@ -32,10 +32,10 @@ export function MessageBubble({ message, onFocusApiKey }: MessageBubbleProps) {
 
   return (
     <div className="flex justify-start">
-      <div className="clay-surface w-full max-w-[96%] sm:max-w-[88%] overflow-hidden rounded-2xl rounded-bl-md">
+      <div className="clay-surface w-full max-w-[98%] sm:max-w-[88%] overflow-hidden rounded-2xl rounded-bl-md">
         {/* Assistant Body */}
-        <div className="px-4 py-3.5 sm:px-5 sm:py-4">
-          <div className="mb-2 flex items-center gap-2 font-mono text-[11px] text-[#9CA3AF]">
+        <div className="px-3.5 py-3 sm:px-5 sm:py-4">
+          <div className="mb-2 flex items-center gap-2 font-mono text-[10.5px] sm:text-[11px] text-[#9CA3AF]">
             {isLocal ? (
               <Cpu className="h-3.5 w-3.5 text-[#34D399]" />
             ) : (
@@ -97,8 +97,8 @@ export function MessageBubble({ message, onFocusApiKey }: MessageBubbleProps) {
 
         {/* Sleek JetBrains Mono Telemetry Footer Bar */}
         {telemetry && (
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-t border-[#262930] bg-[#16181C] px-4 py-2 font-mono text-[11px] text-[#9CA3AF] sm:px-5">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:gap-x-4 sm:gap-y-1.5 border-t border-[#262930] bg-[#16181C] px-3 py-1.5 sm:px-5 sm:py-2 font-mono text-[10px] sm:text-[11px] text-[#9CA3AF]">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
               {/* Route Badge */}
               <span
                 className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-medium ${

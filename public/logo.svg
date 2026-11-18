@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E2026" />
+      <stop offset="100%" stop-color="#121316" />
+    </linearGradient>
+
+    <!-- Emerald Glow / Local Node -->
+    <linearGradient id="localGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+    <filter id="emeraldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Celestial Blue Glow / Cloud Node -->
+    <linearGradient id="cloudGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#60A5FA" />
+    </linearGradient>
+    <filter id="blueGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Core Stem Gradient -->
+    <linearGradient id="stemGrad" x1="50%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#4B5563" />
+      <stop offset="60%" stop-color="#9CA3AF" />
+      <stop offset="100%" stop-color="#F3F4F6" />
+    </linearGradient>
+
+    <!-- Subtle Inner Border -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.15)" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.03)" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base Canvas -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bgGrad)" />
+  <rect x="4" y="4" width="120" height="120" rx="28" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <!-- Ambient Internal Glow Behind Nodes -->
+  <circle cx="44" cy="46" r="18" fill="#34D399" opacity="0.12" filter="blur(8px)" />
+  <circle cx="84" cy="46" r="18" fill="#60A5FA" opacity="0.12" filter="blur(8px)" />
+
+  <!-- Neural Fork Routing Branches -->
+  <!-- Left Branch to Local (Emerald) -->
+  <path
+    d="M64 92 V68 C64 56 44 56 44 48"
+    stroke="url(#localGrad)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Right Branch to Cloud (Blue) -->
+  <path
+    d="M64 92 V68 C64 56 84 56 84 48"
+    stroke="url(#cloudGrad)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Center Input Trunk Highlight -->
+  <path
+    d="M64 94 V74"
+    stroke="url(#stemGrad)"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+
+  <!-- Origin Input Pulse Point -->
+  <circle cx="64" cy="94" r="5" fill="#F3F4F6" />
+
+  <!-- Left Local Node Terminal (Emerald) -->
+  <circle cx="44" cy="46" r="9" fill="url(#localGrad)" filter="url(#emeraldGlow)" />
+  <circle cx="44" cy="46" r="4.5" fill="#FFFFFF" />
+
+  <!-- Right Cloud Node Terminal (Blue) -->
+  <circle cx="84" cy="46" r="9" fill="url(#cloudGrad)" filter="url(#blueGlow)" />
+  <circle cx="84" cy="46" r="4.5" fill="#FFFFFF" />
+
+  <!-- Triage Divergence Pulse Core -->
+  <circle cx="64" cy="68" r="3.5" fill="#F3F4F6" />
+</svg>

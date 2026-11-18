@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-
 function resolveTargetBase(request: NextRequest): string {
   const headerUrl = request.headers.get("x-ollama-base-url");
   if (headerUrl && headerUrl.trim()) {
